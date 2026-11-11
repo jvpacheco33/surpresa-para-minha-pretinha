@@ -1,0 +1,981 @@
+<!DOCTYPE html>
+<html lang="pt-PT" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ELEVA | Nail Design & Studio de Luxo | Parede, Cascais</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Three.js para efeitos 3D imersivos -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <!-- FontAwesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Plus+Jakarta+Sans:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        charcoal: {
+                            950: '#0a0a0a',
+                            900: '#121212',
+                            800: '#1a1a1a',
+                            700: '#262626',
+                        },
+                        rosegold: {
+                            DEFAULT: '#e0a96d',
+                            light: '#f3d5b5',
+                            dark: '#b88652',
+                            champagne: '#f7efe5',
+                        }
+                    },
+                    fontFamily: {
+                        serif: ['"Playfair Display"', 'serif'],
+                        sans: ['"Plus Jakarta Sans"', 'sans-serif'],
+                    },
+                    animation: {
+                        'float': 'float 6s ease-in-out infinite',
+                        'pulse-slow': 'pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+                        'glow': 'glow 3s ease-in-out infinite alternate',
+                    },
+                    keyframes: {
+                        float: {
+                            '0%, 100%': { transform: 'translateY(0px) rotate(0deg)' },
+                            '50%': { transform: 'translateY(-15px) rotate(1deg)' },
+                        },
+                        glow: {
+                            '0%': { boxShadow: '0 0 15px rgba(224, 169, 109, 0.2)' },
+                            '100%': { boxShadow: '0 0 35px rgba(224, 169, 109, 0.6)' },
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #121212;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #262626;
+            border-radius: 4px;
+            border: 1px solid rgba(224, 169, 109, 0.2);
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #e0a96d;
+        }
+
+        .glass-card {
+            background: rgba(18, 18, 18, 0.75);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(224, 169, 109, 0.15);
+        }
+        .glass-nav {
+            background: rgba(10, 10, 10, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border-bottom: 1px solid rgba(224, 169, 109, 0.1);
+        }
+
+        .tilt-card {
+            transform-style: preserve-3d;
+            perspective: 1000px;
+        }
+        .tilt-content {
+            transform: translateZ(30px);
+        }
+
+        .text-gradient {
+            background: linear-gradient(135deg, #f7efe5 0%, #e0a96d 50%, #b88652 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        #three-canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 1;
+        }
+    </style>
+</head>
+<body class="bg-charcoal-950 text-rosegold-champagne font-sans antialiased selection:bg-rosegold selection:text-charcoal-950 overflow-x-hidden">
+
+    <!-- Notificação / Toast Modal (Sem usar alert nativo) -->
+    <div id="toast-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-md opacity-0 pointer-events-none transition-all duration-300">
+        <div class="glass-card p-8 rounded-2xl max-w-md w-full mx-4 text-center transform scale-95 transition-transform duration-300 border border-rosegold/30" id="toast-box">
+            <div class="w-16 h-16 bg-rosegold/20 rounded-full flex items-center justify-center mx-auto mb-4 text-rosegold text-2xl animate-bounce">
+                <i class="fa-solid fa-sparkles"></i>
+            </div>
+            <h3 id="toast-title" class="font-serif text-2xl text-gradient font-bold mb-2">Sucesso!</h3>
+            <p id="toast-message" class="text-rosegold-champagne/80 mb-6 text-sm">O seu pedido foi processado com excelência.</p>
+            <button onclick="closeToast()" class="w-full py-3 bg-gradient-to-r from-rosegold-dark via-rosegold to-rosegold-light text-charcoal-950 font-bold rounded-xl shadow-lg hover:opacity-95 transition-opacity">
+                Continuar
+            </button>
+        </div>
+    </div>
+
+    <!-- WhatsApp Flutuante -->
+    <a href="https://wa.me/351910000000?text=Olá%20Taliane!%20Gostaria%20de%20agendar%20um%20horário%20no%20ELEVA%20Nail%20Studio." target="_blank" class="fixed bottom-6 right-6 z-40 w-14 h-14 bg-gradient-to-br from-green-500 to-emerald-600 rounded-full flex items-center justify-center text-white text-2xl shadow-2xl hover:scale-110 transition-all duration-300 group animate-bounce">
+        <i class="fa-brands fa-whatsapp"></i>
+        <span class="absolute right-16 bg-charcoal-900 text-rosegold-champagne text-xs px-3 py-1.5 rounded-lg shadow-xl opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap border border-rosegold/20">
+            Agendar com Taliane
+        </span>
+    </a>
+
+    <!-- Barra de Navegação Fixa -->
+    <header class="fixed top-0 left-0 right-0 z-40 glass-nav transition-all duration-300">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <a href="#inicio" class="flex items-center gap-3 group">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-rosegold-dark to-rosegold flex items-center justify-center shadow-lg shadow-rosegold/20 group-hover:scale-105 transition-transform">
+                    <i class="fa-solid fa-gem text-charcoal-950 text-lg"></i>
+                </div>
+                <div class="flex flex-col">
+                    <span class="font-serif text-2xl font-bold tracking-widest text-gradient">ELEVA</span>
+                    <span class="text-[9px] uppercase tracking-widest text-rosegold/70 -mt-1 font-semibold">Nail Studio • Parede</span>
+                </div>
+            </a>
+
+            <nav class="hidden md:flex items-center gap-8 text-sm font-medium tracking-wide">
+                <a href="#inicio" class="text-rosegold hover:text-rosegold-light transition-colors">Início</a>
+                <a href="#sobre" class="text-rosegold-champagne/80 hover:text-rosegold transition-colors">A Taliane</a>
+                <a href="#servicos" class="text-rosegold-champagne/80 hover:text-rosegold transition-colors">Serviços 3D</a>
+                <a href="#galeria" class="text-rosegold-champagne/80 hover:text-rosegold transition-colors">Portfólio</a>
+                <a href="#avaliacoes" class="text-rosegold-champagne/80 hover:text-rosegold transition-colors">Avaliações</a>
+                <a href="#agendar" class="text-rosegold-champagne/80 hover:text-rosegold transition-colors">Agendamento</a>
+            </nav>
+
+            <div class="hidden md:flex items-center gap-4">
+                <a href="https://wa.me/351910000000?text=Olá%20Taliane!%20Gostaria%20de%20marcar%20uma%20sessão." target="_blank" class="px-5 py-2.5 rounded-full bg-gradient-to-r from-rosegold-dark via-rosegold to-rosegold-light text-charcoal-950 font-semibold text-sm shadow-lg shadow-rosegold/20 hover:shadow-rosegold/40 hover:scale-105 transition-all flex items-center gap-2">
+                    <i class="fa-brands fa-whatsapp text-base"></i>
+                    <span>WhatsApp VIP</span>
+                </a>
+            </div>
+
+            <button id="menu-btn" class="md:hidden text-rosegold text-2xl focus:outline-none p-2">
+                <i class="fa-solid fa-bars"></i>
+            </button>
+        </div>
+
+        <div id="mobile-menu" class="hidden md:hidden glass-card border-t border-rosegold/10 px-6 py-6 flex flex-col gap-4">
+            <a href="#inicio" class="mobile-link text-rosegold font-medium">Início</a>
+            <a href="#sobre" class="mobile-link text-rosegold-champagne/80 font-medium">A Taliane</a>
+            <a href="#servicos" class="mobile-link text-rosegold-champagne/80 font-medium">Serviços 3D</a>
+            <a href="#galeria" class="mobile-link text-rosegold-champagne/80 font-medium">Portfólio</a>
+            <a href="#avaliacoes" class="mobile-link text-rosegold-champagne/80 font-medium">Avaliações</a>
+            <a href="#agendar" class="mobile-link text-rosegold-champagne/80 font-medium">Agendamento</a>
+            <a href="https://wa.me/351910000000" target="_blank" class="w-full py-3 rounded-xl bg-gradient-to-r from-rosegold-dark to-rosegold text-charcoal-950 font-semibold text-center mt-2 flex items-center justify-center gap-2">
+                <i class="fa-brands fa-whatsapp"></i> WhatsApp VIP
+            </a>
+        </div>
+    </header>
+
+    <!-- Seção Hero Imersiva -->
+    <section id="inicio" class="relative min-h-screen flex items-center justify-center pt-28 pb-16 px-6 overflow-hidden bg-gradient-to-b from-charcoal-950 via-charcoal-900 to-charcoal-950">
+        <canvas id="three-canvas"></canvas>
+
+        <div class="absolute top-1/4 left-1/4 w-96 h-96 bg-rosegold/10 rounded-full blur-3xl pointer-events-none animate-pulse-slow"></div>
+        <div class="absolute bottom-1/4 right-1/4 w-80 h-80 bg-amber-600/10 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-12 gap-12 items-center relative z-10">
+            <div class="lg:col-span-7 flex flex-col items-start text-left">
+                <div class="inline-flex items-center gap-2 px-4 py-2 rounded-full glass-card border border-rosegold/30 mb-6 text-xs uppercase tracking-widest text-rosegold animate-glow">
+                    <i class="fa-solid fa-location-dot text-rosegold"></i>
+                    <span>Parede • Cascais | Portugal</span>
+                </div>
+                
+                <h1 class="font-serif text-4xl sm:text-6xl lg:text-7xl font-bold tracking-tight mb-6 leading-tight">
+                    ELEVA Nail Studio <span class="text-gradient">por Taliane</span>.
+                </h1>
+
+                <p class="text-rosegold-champagne/70 text-lg sm:text-xl font-light mb-8 max-w-xl leading-relaxed">
+                    Arte em unhas de alto padrão, rigor europeu em biossegurança e acabamentos impecáveis para realçar a sua sofisticação natural.
+                </p>
+
+                <div class="flex flex-wrap items-center gap-4">
+                    <a href="#agendar" class="px-8 py-4 rounded-full bg-gradient-to-r from-rosegold-dark via-rosegold to-rosegold-light text-charcoal-950 font-bold shadow-xl shadow-rosegold/30 hover:scale-105 transition-all duration-300 flex items-center gap-3">
+                        <span>Agendar Sessão</span>
+                        <i class="fa-solid fa-arrow-right-long"></i>
+                    </a>
+                    <a href="#galeria" class="px-8 py-4 rounded-full glass-card border border-rosegold/30 text-rosegold-champagne font-semibold hover:border-rosegold hover:text-rosegold transition-all duration-300">
+                        Ver Portfólio 3D
+                    </a>
+                </div>
+
+                <div class="grid grid-cols-3 gap-6 mt-12 pt-8 border-t border-rosegold/10 w-full max-w-lg">
+                    <div>
+                        <span class="block font-serif text-3xl font-bold text-gradient">+8 Anos</span>
+                        <span class="text-xs text-rosegold-champagne/60 uppercase tracking-wider">De Experiência</span>
+                    </div>
+                    <div>
+                        <span class="block font-serif text-3xl font-bold text-gradient">100%</span>
+                        <span class="text-xs text-rosegold-champagne/60 uppercase tracking-wider">Esterilizado</span>
+                    </div>
+                    <div>
+                        <span class="block font-serif text-3xl font-bold text-gradient">5 ★</span>
+                        <span class="text-xs text-rosegold-champagne/60 uppercase tracking-wider">Avaliações VIP</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Card Destaque 3D Taliane -->
+            <div class="lg:col-span-5 flex justify-center">
+                <div class="tilt-card relative w-full max-w-md aspect-[4/5] rounded-3xl p-1 bg-gradient-to-b from-rosegold/50 via-rosegold/10 to-charcoal-800 shadow-2xl animate-float">
+                    <div class="glass-card w-full h-full rounded-[22px] overflow-hidden relative flex flex-col justify-end p-6 tilt-content">
+                        <div class="absolute inset-0 z-0">
+                            <img src="https://images.unsplash.com/photo-1534528741775-53994a69daeb?auto=format&fit=crop&w=600&q=80" 
+                                 alt="Taliane Nail Designer" 
+                                 class="w-full h-full object-cover object-center opacity-85 hover:scale-105 transition-transform duration-700">
+                            <div class="absolute inset-0 bg-gradient-to-t from-charcoal-950 via-charcoal-950/40 to-transparent"></div>
+                        </div>
+
+                        <div class="absolute top-4 right-4 z-10 glass-card px-4 py-2 rounded-full border border-rosegold/40 flex items-center gap-2 shadow-lg">
+                            <i class="fa-solid fa-crown text-rosegold text-xs"></i>
+                            <span class="text-xs font-semibold text-rosegold-champagne">Master Nail Designer</span>
+                        </div>
+
+                        <div class="relative z-10">
+                            <span class="text-xs uppercase tracking-widest text-rosegold font-semibold mb-1 block">Fundadora & Artista</span>
+                            <h3 class="font-serif text-2xl font-bold text-gradient mb-2">Taliane</h3>
+                            <p class="text-xs text-rosegold-champagne/80 mb-4 leading-relaxed">
+                                Especialista em Manicure Russa de precisão, Estruturas em Gel e Nail Art Exclusiva na Parede (Cascais).
+                            </p>
+                            <div class="flex items-center gap-3">
+                                <div class="flex -space-x-2">
+                                    <div class="w-8 h-8 rounded-full bg-rosegold/30 border border-rosegold flex items-center justify-center text-xs font-bold text-rosegold">T</div>
+                                    <div class="w-8 h-8 rounded-full bg-amber-600/30 border border-amber-500 flex items-center justify-center text-xs font-bold text-amber-200">E</div>
+                                    <div class="w-8 h-8 rounded-full bg-rose-500/30 border border-rose-400 flex items-center justify-center text-xs font-bold text-rose-200">L</div>
+                                </div>
+                                <span class="text-xs text-rosegold-champagne/70">+1.200 clientes encantadas em Portugal</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Seção Sobre a Profissional (Taliane) -->
+    <section id="sobre" class="py-24 px-6 relative bg-charcoal-900 overflow-hidden">
+        <div class="max-w-7xl mx-auto">
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+                <div class="lg:col-span-6 grid grid-cols-2 gap-4">
+                    <div class="space-y-4">
+                        <div class="glass-card p-2 rounded-2xl overflow-hidden shadow-xl tilt-card">
+                            <img src="https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=500&q=80" alt="Nail Art Detail" class="w-full h-64 object-cover rounded-xl hover:scale-105 transition-transform duration-500">
+                        </div>
+                        <div class="glass-card p-6 rounded-2xl border border-rosegold/25 bg-gradient-to-br from-charcoal-800 to-charcoal-900">
+                            <span class="font-serif text-4xl font-bold text-gradient block mb-1">E.U.</span>
+                            <p class="text-xs text-rosegold-champagne/70 uppercase tracking-wider">Produtos Certificados na União Europeia</p>
+                        </div>
+                    </div>
+                    <div class="space-y-4 pt-8">
+                        <div class="glass-card p-6 rounded-2xl border border-rosegold/25 bg-gradient-to-br from-charcoal-900 to-charcoal-800">
+                            <i class="fa-solid fa-shield-heart text-3xl text-rosegold mb-3"></i>
+                            <h4 class="font-serif font-bold text-lg mb-1">Esterilização Hospitalar</h4>
+                            <p class="text-xs text-rosegold-champagne/70">Autoclave de última geração e material individual.</p>
+                        </div>
+                        <div class="glass-card p-2 rounded-2xl overflow-hidden shadow-xl tilt-card">
+                            <img src="https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format&fit=crop&w=500&q=80" alt="Studio Parede" class="w-full h-64 object-cover rounded-xl hover:scale-105 transition-transform duration-500">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="lg:col-span-6 flex flex-col items-start">
+                    <span class="text-xs font-semibold uppercase tracking-widest text-rosegold mb-3">Conheça a Artista</span>
+                    <h2 class="font-serif text-3xl sm:text-5xl font-bold mb-6 leading-tight">
+                        A excelência pelas mãos de <span class="text-gradient">Taliane</span>.
+                    </h2>
+                    <p class="text-rosegold-champagne/80 font-light mb-6 leading-relaxed">
+                        Situado na charmosa localidade da <strong class="text-rosegold font-semibold">Parede (Cascais)</strong>, o <strong class="text-rosegold font-semibold">ELEVA Nail Studio</strong> nasceu da paixão da Taliane por transformar o cuidado das unhas numa verdadeira experiência de bem-estar e alta costura.
+                    </p>
+                    <p class="text-rosegold-champagne/70 text-sm font-light mb-8 leading-relaxed">
+                        Com formação internacional e constante atualização nas técnicas mais avançadas da Europa, a Taliane prioriza a saúde natural da unha em primeiro lugar, combinando durabilidade impecável, cutículas limpas sem cortes e decorações exclusivas.
+                    </p>
+
+                    <div class="grid grid-cols-2 gap-6 w-full mb-8">
+                        <div class="flex items-start gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-rosegold/10 border border-rosegold/30 flex items-center justify-center text-rosegold flex-shrink-0">
+                                <i class="fa-solid fa-gem"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-sm mb-1">Curvatura Perfeita</h4>
+                                <p class="text-xs text-rosegold-champagne/60">Estruturas fortes, finas e altamente elegantes.</p>
+                            </div>
+                        </div>
+                        <div class="flex items-start gap-3">
+                            <div class="w-10 h-10 rounded-xl bg-rosegold/10 border border-rosegold/30 flex items-center justify-center text-rosegold flex-shrink-0">
+                                <i class="fa-solid fa-spa"></i>
+                            </div>
+                            <div>
+                                <h4 class="font-bold text-sm mb-1">Ambiente Privativo</h4>
+                                <p class="text-xs text-rosegold-champagne/60">Atendimento com hora marcada e total exclusividade.</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    <a href="#agendar" class="px-8 py-3.5 rounded-full bg-gradient-to-r from-rosegold-dark to-rosegold text-charcoal-950 font-bold text-sm shadow-lg hover:scale-105 transition-transform">
+                        Reservar o Meu Horário
+                    </a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Catálogo de Serviços Interativo (Cards 3D Tilt) -->
+    <section id="servicos" class="py-24 px-6 relative bg-charcoal-950">
+        <div class="max-w-7xl mx-auto">
+            <div class="text-center max-w-2xl mx-auto mb-16">
+                <span class="text-xs font-semibold uppercase tracking-widest text-rosegold mb-3 block">Menu de Tratamentos</span>
+                <h2 class="font-serif text-3xl sm:text-5xl font-bold mb-4">Serviços & <span class="text-gradient">Protocolos 3D</span></h2>
+                <p class="text-rosegold-champagne/70 text-sm sm:text-base">Escolha o serviço executado com rigor e sofisticação pela Taliane.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+                <!-- Serviço 1 -->
+                <div class="tilt-card glass-card rounded-3xl p-6 flex flex-col justify-between border border-rosegold/20 hover:border-rosegold/60 transition-all duration-300 shadow-xl group">
+                    <div class="tilt-content">
+                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-rosegold-dark to-rosegold flex items-center justify-center text-charcoal-950 text-2xl font-bold mb-6 shadow-lg group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-wand-magic-sparkles"></i>
+                        </div>
+                        <span class="text-[10px] uppercase tracking-widest text-rosegold font-bold">Mais Procurado</span>
+                        <h3 class="font-serif text-2xl font-bold mt-1 mb-3">Manicure Russa</h3>
+                        <p class="text-xs text-rosegold-champagne/70 mb-6 leading-relaxed">
+                            Técnica a seco de alta precisão com brocas especiais, proporcionando cutilagem perfeita, limpa e esmaltação impecável rente à cutícula.
+                        </p>
+                    </div>
+                    <div class="tilt-content pt-4 border-t border-rosegold/10 flex items-center justify-between">
+                        <div>
+                            <span class="text-[10px] text-rosegold-champagne/60 block">Investimento</span>
+                            <span class="font-serif text-xl font-bold text-gradient">35 €</span>
+                        </div>
+                        <button onclick="openBookingModal('Manicure Russa')" class="px-4 py-2 rounded-full bg-rosegold/20 hover:bg-rosegold hover:text-charcoal-950 text-rosegold text-xs font-bold transition-colors">
+                            Agendar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Serviço 2 -->
+                <div class="tilt-card glass-card rounded-3xl p-6 flex flex-col justify-between border border-rosegold/20 hover:border-rosegold/60 transition-all duration-300 shadow-xl group">
+                    <div class="tilt-content">
+                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-600 to-amber-400 flex items-center justify-center text-charcoal-950 text-2xl font-bold mb-6 shadow-lg group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-shield-halved"></i>
+                        </div>
+                        <span class="text-[10px] uppercase tracking-widest text-amber-400 font-bold">Blindagem & Força</span>
+                        <h3 class="font-serif text-2xl font-bold mt-1 mb-3">Gel Capping (Blindagem)</h3>
+                        <p class="text-xs text-rosegold-champagne/70 mb-6 leading-relaxed">
+                            Banho de gel estruturado sobre a unha natural. Protege contra descamações e quebras, estimulando o crescimento com aspeto ultrafino.
+                        </p>
+                    </div>
+                    <div class="tilt-content pt-4 border-t border-rosegold/10 flex items-center justify-between">
+                        <div>
+                            <span class="text-[10px] text-rosegold-champagne/60 block">Investimento</span>
+                            <span class="font-serif text-xl font-bold text-gradient">45 €</span>
+                        </div>
+                        <button onclick="openBookingModal('Gel Capping')" class="px-4 py-2 rounded-full bg-rosegold/20 hover:bg-rosegold hover:text-charcoal-950 text-rosegold text-xs font-bold transition-colors">
+                            Agendar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Serviço 3 -->
+                <div class="tilt-card glass-card rounded-3xl p-6 flex flex-col justify-between border border-rosegold/20 hover:border-rosegold/60 transition-all duration-300 shadow-xl group">
+                    <div class="tilt-content">
+                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-rose-500 to-rose-300 flex items-center justify-center text-charcoal-950 text-2xl font-bold mb-6 shadow-lg group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-gem"></i>
+                        </div>
+                        <span class="text-[10px] uppercase tracking-widest text-rose-300 font-bold">Alongamento Luxury</span>
+                        <h3 class="font-serif text-2xl font-bold mt-1 mb-3">Gel ou Acrílico</h3>
+                        <p class="text-xs text-rosegold-champagne/70 mb-6 leading-relaxed">
+                            Alongamento sob medida com moldes oficiais. Formatos perfeitos (amendoadas, bailarina, quadrado), leves e com durabilidade superior a 4 semanas.
+                        </p>
+                    </div>
+                    <div class="tilt-content pt-4 border-t border-rosegold/10 flex items-center justify-between">
+                        <div>
+                            <span class="text-[10px] text-rosegold-champagne/60 block">Investimento</span>
+                            <span class="font-serif text-xl font-bold text-gradient">60 €</span>
+                        </div>
+                        <button onclick="openBookingModal('Alongamento em Gel')" class="px-4 py-2 rounded-full bg-rosegold/20 hover:bg-rosegold hover:text-charcoal-950 text-rosegold text-xs font-bold transition-colors">
+                            Agendar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Serviço 4 -->
+                <div class="tilt-card glass-card rounded-3xl p-6 flex flex-col justify-between border border-rosegold/20 hover:border-rosegold/60 transition-all duration-300 shadow-xl group">
+                    <div class="tilt-content">
+                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-400 flex items-center justify-center text-charcoal-950 text-2xl font-bold mb-6 shadow-lg group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-palette"></i>
+                        </div>
+                        <span class="text-[10px] uppercase tracking-widest text-indigo-300 font-bold">Exclusividade</span>
+                        <h3 class="font-serif text-2xl font-bold mt-1 mb-3">Nail Art Avançada</h3>
+                        <p class="text-xs text-rosegold-champagne/70 mb-6 leading-relaxed">
+                            Designs personalizados: efeito 3D, baby boomer, francesinha russa, cromados espelhados, folha de ouro e pedrarias especiais.
+                        </p>
+                    </div>
+                    <div class="tilt-content pt-4 border-t border-rosegold/10 flex items-center justify-between">
+                        <div>
+                            <span class="text-[10px] text-rosegold-champagne/60 block">A partir de</span>
+                            <span class="font-serif text-xl font-bold text-gradient">55 €</span>
+                        </div>
+                        <button onclick="openBookingModal('Nail Art Avançada')" class="px-4 py-2 rounded-full bg-rosegold/20 hover:bg-rosegold hover:text-charcoal-950 text-rosegold text-xs font-bold transition-colors">
+                            Agendar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Serviço 5 -->
+                <div class="tilt-card glass-card rounded-3xl p-6 flex flex-col justify-between border border-rosegold/20 hover:border-rosegold/60 transition-all duration-300 shadow-xl group">
+                    <div class="tilt-content">
+                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-amber-700 to-rosegold flex items-center justify-center text-charcoal-950 text-2xl font-bold mb-6 shadow-lg group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-spa"></i>
+                        </div>
+                        <span class="text-[10px] uppercase tracking-widest text-rosegold font-bold">Relaxamento</span>
+                        <h3 class="font-serif text-2xl font-bold mt-1 mb-3">Spa dos Pés VIP</h3>
+                        <p class="text-xs text-rosegold-champagne/70 mb-6 leading-relaxed">
+                            Escalda-pés com sais essenciais, esfoliação enzimática profunda, máscara de hidratação e cuidados especializados para os pés.
+                        </p>
+                    </div>
+                    <div class="tilt-content pt-4 border-t border-rosegold/10 flex items-center justify-between">
+                        <div>
+                            <span class="text-[10px] text-rosegold-champagne/60 block">Investimento</span>
+                            <span class="font-serif text-xl font-bold text-gradient">40 €</span>
+                        </div>
+                        <button onclick="openBookingModal('Spa dos Pés VIP')" class="px-4 py-2 rounded-full bg-rosegold/20 hover:bg-rosegold hover:text-charcoal-950 text-rosegold text-xs font-bold transition-colors">
+                            Agendar
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Serviço 6 -->
+                <div class="tilt-card glass-card rounded-3xl p-6 flex flex-col justify-between border border-rosegold/20 hover:border-rosegold/60 transition-all duration-300 shadow-xl group">
+                    <div class="tilt-content">
+                        <div class="w-14 h-14 rounded-2xl bg-gradient-to-br from-emerald-600 to-teal-400 flex items-center justify-center text-charcoal-950 text-2xl font-bold mb-6 shadow-lg group-hover:scale-110 transition-transform">
+                            <i class="fa-solid fa-hand-sparkles"></i>
+                        </div>
+                        <span class="text-[10px] uppercase tracking-widest text-teal-300 font-bold">Manutenção</span>
+                        <h3 class="font-serif text-2xl font-bold mt-1 mb-3">Manutenção de Gel</h3>
+                        <p class="text-xs text-rosegold-champagne/70 mb-6 leading-relaxed">
+                            Reestruturação completa da unha de gel ou acrílico, repondo o ponto de tensão, nivelamento e nova esmaltação em gel.
+                        </p>
+                    </div>
+                    <div class="tilt-content pt-4 border-t border-rosegold/10 flex items-center justify-between">
+                        <div>
+                            <span class="text-[10px] text-rosegold-champagne/60 block">Investimento</span>
+                            <span class="font-serif text-xl font-bold text-gradient">45 €</span>
+                        </div>
+                        <button onclick="openBookingModal('Manutenção de Gel')" class="px-4 py-2 rounded-full bg-rosegold/20 hover:bg-rosegold hover:text-charcoal-950 text-rosegold text-xs font-bold transition-colors">
+                            Agendar
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Galeria / Portfólio com Filtro -->
+    <section id="galeria" class="py-24 px-6 bg-charcoal-900 relative">
+        <div class="max-w-7xl mx-auto">
+            <div class="flex flex-col md:flex-row md:items-end justify-between mb-16 gap-6">
+                <div>
+                    <span class="text-xs font-semibold uppercase tracking-widest text-rosegold mb-3 block">Portfólio de Obras</span>
+                    <h2 class="font-serif text-3xl sm:text-5xl font-bold">Galeria <span class="text-gradient">Imersiva 3D</span></h2>
+                </div>
+                <div class="flex flex-wrap gap-2">
+                    <button onclick="filterGallery('all')" class="gallery-btn px-4 py-2 rounded-full text-xs font-semibold bg-rosegold text-charcoal-950 transition-all">Todos</button>
+                    <button onclick="filterGallery('russa')" class="gallery-btn px-4 py-2 rounded-full text-xs font-semibold glass-card text-rosegold-champagne hover:text-rosegold transition-all">Manicure Russa</button>
+                    <button onclick="filterGallery('nailart')" class="gallery-btn px-4 py-2 rounded-full text-xs font-semibold glass-card text-rosegold-champagne hover:text-rosegold transition-all">Nail Art 3D</button>
+                    <button onclick="filterGallery('alongamento')" class="gallery-btn px-4 py-2 rounded-full text-xs font-semibold glass-card text-rosegold-champagne hover:text-rosegold transition-all">Alongamento</button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8" id="gallery-grid">
+                <div class="gallery-item russa group relative rounded-3xl overflow-hidden glass-card aspect-square shadow-2xl tilt-card">
+                    <img src="https://images.unsplash.com/photo-1632345031435-8727f6897d53?auto=format&fit=crop&w=700&q=80" alt="Nail Design 1" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                    <div class="absolute inset-0 bg-gradient-to-t from-charcoal-950 via-charcoal-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-8">
+                        <span class="text-xs uppercase tracking-widest text-rosegold font-bold mb-1">Manicure Russa</span>
+                        <h4 class="font-serif text-xl font-bold text-white mb-2">Minimalist Nude Gloss</h4>
+                        <p class="text-xs text-rosegold-champagne/80">Feito por Taliane | Parede, Cascais</p>
+                    </div>
+                </div>
+
+                <div class="gallery-item nailart group relative rounded-3xl overflow-hidden glass-card aspect-square shadow-2xl tilt-card">
+                    <img src="https://images.unsplash.com/photo-1604654894610-df63bc536371?auto=format&fit=crop&w=700&q=80" alt="Nail Design 2" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                    <div class="absolute inset-0 bg-gradient-to-t from-charcoal-950 via-charcoal-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-8">
+                        <span class="text-xs uppercase tracking-widest text-rosegold font-bold mb-1">Nail Art 3D</span>
+                        <h4 class="font-serif text-xl font-bold text-white mb-2">Sculpted Gold Touch</h4>
+                        <p class="text-xs text-rosegold-champagne/80">Feito por Taliane | Parede, Cascais</p>
+                    </div>
+                </div>
+
+                <div class="gallery-item alongamento group relative rounded-3xl overflow-hidden glass-card aspect-square shadow-2xl tilt-card">
+                    <img src="https://images.unsplash.com/photo-1519014816548-bf5fe059798b?auto=format&fit=crop&w=700&q=80" alt="Nail Design 3" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                    <div class="absolute inset-0 bg-gradient-to-t from-charcoal-950 via-charcoal-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-8">
+                        <span class="text-xs uppercase tracking-widest text-rosegold font-bold mb-1">Alongamento</span>
+                        <h4 class="font-serif text-xl font-bold text-white mb-2">Elegance Almond Gel</h4>
+                        <p class="text-xs text-rosegold-champagne/80">Feito por Taliane | Parede, Cascais</p>
+                    </div>
+                </div>
+
+                <div class="gallery-item russa group relative rounded-3xl overflow-hidden glass-card aspect-square shadow-2xl tilt-card">
+                    <img src="https://images.unsplash.com/photo-1522337360788-8b13dee7a37e?auto=format&fit=crop&w=700&q=80" alt="Nail Design 4" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                    <div class="absolute inset-0 bg-gradient-to-t from-charcoal-950 via-charcoal-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-8">
+                        <span class="text-xs uppercase tracking-widest text-rosegold font-bold mb-1">Manicure Russa</span>
+                        <h4 class="font-serif text-xl font-bold text-white mb-2">Classic Clean Contour</h4>
+                        <p class="text-xs text-rosegold-champagne/80">Feito por Taliane | Parede, Cascais</p>
+                    </div>
+                </div>
+
+                <div class="gallery-item nailart group relative rounded-3xl overflow-hidden glass-card aspect-square shadow-2xl tilt-card">
+                    <img src="https://images.unsplash.com/photo-1512496015851-a90fb38ba796?auto=format&fit=crop&w=700&q=80" alt="Nail Design 5" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                    <div class="absolute inset-0 bg-gradient-to-t from-charcoal-950 via-charcoal-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-8">
+                        <span class="text-xs uppercase tracking-widest text-rosegold font-bold mb-1">Nail Art 3D</span>
+                        <h4 class="font-serif text-xl font-bold text-white mb-2">Metallic Chrome Glow</h4>
+                        <p class="text-xs text-rosegold-champagne/80">Feito por Taliane | Parede, Cascais</p>
+                    </div>
+                </div>
+
+                <div class="gallery-item alongamento group relative rounded-3xl overflow-hidden glass-card aspect-square shadow-2xl tilt-card">
+                    <img src="https://images.unsplash.com/photo-1599566150163-29194dcaad36?auto=format&fit=crop&w=700&q=80" alt="Nail Design 6" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700">
+                    <div class="absolute inset-0 bg-gradient-to-t from-charcoal-950 via-charcoal-950/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex flex-col justify-end p-8">
+                        <span class="text-xs uppercase tracking-widest text-rosegold font-bold mb-1">Alongamento</span>
+                        <h4 class="font-serif text-xl font-bold text-white mb-2">French Diamond Luxury</h4>
+                        <p class="text-xs text-rosegold-champagne/80">Feito por Taliane | Parede, Cascais</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Seção de Avaliações de Clientes Satisfeitas -->
+    <section id="avaliacoes" class="py-24 px-6 bg-charcoal-950 relative overflow-hidden">
+        <div class="absolute top-1/3 left-1/2 -translate-x-1/2 w-[500px] h-[500px] bg-rosegold/5 rounded-full blur-3xl pointer-events-none"></div>
+
+        <div class="max-w-7xl mx-auto relative z-10">
+            <div class="text-center max-w-2xl mx-auto mb-16">
+                <span class="text-xs font-semibold uppercase tracking-widest text-rosegold mb-3 block">Depoimentos</span>
+                <h2 class="font-serif text-3xl sm:text-5xl font-bold mb-4">O que dizem as <span class="text-gradient">nossas clientes</span></h2>
+                <p class="text-rosegold-champagne/70 text-sm sm:text-base">A satisfação e o carinho de quem confia no trabalho da Taliane.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                <!-- Avaliação 1 -->
+                <div class="glass-card p-8 rounded-3xl border border-rosegold/20 flex flex-col justify-between shadow-xl tilt-card">
+                    <div>
+                        <div class="flex items-center gap-1 text-rosegold mb-4 text-sm">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <p class="text-rosegold-champagne/90 text-sm font-light italic mb-6 leading-relaxed">
+                            "A Taliane é simplesmente extraordinária! As minhas unhas nunca duraram tanto tempo intactas. A Manicure Russa dela é de outro nível, super limpa e o espaço na Parede é um verdadeiro oásis de luxo."
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-4 pt-4 border-t border-rosegold/10">
+                        <div class="w-10 h-10 rounded-full bg-rosegold/20 border border-rosegold flex items-center justify-center font-bold text-rosegold text-sm">BC</div>
+                        <div>
+                            <h4 class="font-bold text-sm text-rosegold-champagne">Beatriz Costa</h4>
+                            <span class="text-[11px] text-rosegold-champagne/60">Cascais</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Avaliação 2 -->
+                <div class="glass-card p-8 rounded-3xl border border-rosegold/20 flex flex-col justify-between shadow-xl tilt-card">
+                    <div>
+                        <div class="flex items-center gap-1 text-rosegold mb-4 text-sm">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <p class="text-rosegold-champagne/90 text-sm font-light italic mb-6 leading-relaxed">
+                            "Fazer as unhas com a Taliane no ELEVA tornou-se o meu momento favorito do mês. Atenção aos mínimos detalhes, produtos impecáveis e um profissionalismo inexcedível. Recomendo a 100%!"
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-4 pt-4 border-t border-rosegold/10">
+                        <div class="w-10 h-10 rounded-full bg-rosegold/20 border border-rosegold flex items-center justify-center font-bold text-rosegold text-sm">MF</div>
+                        <div>
+                            <h4 class="font-bold text-sm text-rosegold-champagne">Margarida Ferreira</h4>
+                            <span class="text-[11px] text-rosegold-champagne/60">Estoril</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Avaliação 3 -->
+                <div class="glass-card p-8 rounded-3xl border border-rosegold/20 flex flex-col justify-between shadow-xl tilt-card">
+                    <div>
+                        <div class="flex items-center gap-1 text-rosegold mb-4 text-sm">
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                            <i class="fa-solid fa-star"></i>
+                        </div>
+                        <p class="text-rosegold-champagne/90 text-sm font-light italic mb-6 leading-relaxed">
+                            "Espaço lindíssimo, super higiénico e acolhedor na Parede. A Taliane tem mãos de fada, a nail art que me fez superou todas as expectativas. Não troco por nada!"
+                        </p>
+                    </div>
+                    <div class="flex items-center gap-4 pt-4 border-t border-rosegold/10">
+                        <div class="w-10 h-10 rounded-full bg-rosegold/20 border border-rosegold flex items-center justify-center font-bold text-rosegold text-sm">JS</div>
+                        <div>
+                            <h4 class="font-bold text-sm text-rosegold-champagne">Joana Silva</h4>
+                            <span class="text-[11px] text-rosegold-champagne/60">Parede</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Seção de Agendamento Online -->
+    <section id="agendar" class="py-24 px-6 bg-charcoal-900 relative">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-center">
+            <div class="lg:col-span-5 flex flex-col items-start">
+                <span class="text-xs font-semibold uppercase tracking-widest text-rosegold mb-3">Atendimento Exclusivo</span>
+                <h2 class="font-serif text-3xl sm:text-5xl font-bold mb-6 leading-tight">
+                    Agende sua <span class="text-gradient">experiência VIP</span>.
+                </h2>
+                <p class="text-rosegold-champagne/80 font-light mb-8 leading-relaxed">
+                    Preencha o formulário para submeter o seu pedido de marcação ou contacte directamente a Taliane via WhatsApp.
+                </p>
+
+                <div class="space-y-6 w-full">
+                    <div class="flex items-center gap-4 p-4 rounded-2xl glass-card border border-rosegold/20">
+                        <div class="w-12 h-12 rounded-xl bg-rosegold/10 text-rosegold flex items-center justify-center text-xl flex-shrink-0">
+                            <i class="fa-solid fa-location-dot"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-sm text-rosegold-champagne">ELEVA Nail Studio</h4>
+                            <p class="text-xs text-rosegold-champagne/60">Parede, Cascais — Lisboa, Portugal</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4 p-4 rounded-2xl glass-card border border-rosegold/20">
+                        <div class="w-12 h-12 rounded-xl bg-rosegold/10 text-rosegold flex items-center justify-center text-xl flex-shrink-0">
+                            <i class="fa-solid fa-clock"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-sm text-rosegold-champagne">Horário de Funcionamento</h4>
+                            <p class="text-xs text-rosegold-champagne/60">Segunda a Sábado: 09:00 – 19:00</p>
+                        </div>
+                    </div>
+
+                    <div class="flex items-center gap-4 p-4 rounded-2xl glass-card border border-rosegold/20">
+                        <div class="w-12 h-12 rounded-xl bg-rosegold/10 text-rosegold flex items-center justify-center text-xl flex-shrink-0">
+                            <i class="fa-brands fa-whatsapp"></i>
+                        </div>
+                        <div>
+                            <h4 class="font-bold text-sm text-rosegold-champagne">WhatsApp Directo</h4>
+                            <p class="text-xs text-rosegold-champagne/60">+351 910 000 000</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="lg:col-span-7">
+                <div class="glass-card p-8 sm:p-10 rounded-3xl border border-rosegold/30 shadow-2xl relative">
+                    <div class="absolute -top-4 right-8 bg-gradient-to-r from-rosegold-dark to-rosegold text-charcoal-950 font-bold text-xs px-4 py-1.5 rounded-full uppercase tracking-wider shadow-lg">
+                        Vagas Limitadas
+                    </div>
+
+                    <h3 class="font-serif text-2xl sm:text-3xl font-bold mb-2">Formulário de Marcação</h3>
+                    <p class="text-xs text-rosegold-champagne/70 mb-8">A Taliane responderá brevemente via WhatsApp para confirmar o horário.</p>
+
+                    <form id="booking-form" onsubmit="handleBooking(event)" class="space-y-6">
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-xs uppercase tracking-wider text-rosegold font-semibold mb-2">Seu Nome Completo</label>
+                                <input type="text" required placeholder="Ex: Carlota Santos" class="w-full px-4 py-3.5 rounded-xl bg-charcoal-900 border border-rosegold/20 text-rosegold-champagne text-sm focus:outline-none focus:border-rosegold transition-colors">
+                            </div>
+                            <div>
+                                <label class="block text-xs uppercase tracking-wider text-rosegold font-semibold mb-2">Telemóvel / WhatsApp</label>
+                                <input type="tel" required placeholder="+351 912 345 678" class="w-full px-4 py-3.5 rounded-xl bg-charcoal-900 border border-rosegold/20 text-rosegold-champagne text-sm focus:outline-none focus:border-rosegold transition-colors">
+                            </div>
+                        </div>
+
+                        <div class="grid grid-cols-1 sm:grid-cols-2 gap-6">
+                            <div>
+                                <label class="block text-xs uppercase tracking-wider text-rosegold font-semibold mb-2">Serviço Pretendido</label>
+                                <select id="service-select" class="w-full px-4 py-3.5 rounded-xl bg-charcoal-900 border border-rosegold/20 text-rosegold-champagne text-sm focus:outline-none focus:border-rosegold transition-colors">
+                                    <option value="Manicure Russa">Manicure Russa (35 €)</option>
+                                    <option value="Gel Capping">Gel Capping / Blindagem (45 €)</option>
+                                    <option value="Alongamento em Gel">Alongamento em Gel (60 €)</option>
+                                    <option value="Nail Art Avançada">Nail Art Avançada (55 €+)</option>
+                                    <option value="Spa dos Pés VIP">Spa dos Pés VIP (40 €)</option>
+                                    <option value="Manutenção de Gel">Manutenção de Gel (45 €)</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs uppercase tracking-wider text-rosegold font-semibold mb-2">Data Pretendida</label>
+                                <input type="date" required class="w-full px-4 py-3.5 rounded-xl bg-charcoal-900 border border-rosegold/20 text-rosegold-champagne text-sm focus:outline-none focus:border-rosegold transition-colors">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-xs uppercase tracking-wider text-rosegold font-semibold mb-2">Observações ou Referência de Estilo</label>
+                            <textarea rows="3" placeholder="Indique se tem preferência por formato, cor ou nail art..." class="w-full px-4 py-3.5 rounded-xl bg-charcoal-900 border border-rosegold/20 text-rosegold-champagne text-sm focus:outline-none focus:border-rosegold transition-colors"></textarea>
+                        </div>
+
+                        <button type="submit" class="w-full py-4 rounded-xl bg-gradient-to-r from-rosegold-dark via-rosegold to-rosegold-light text-charcoal-950 font-bold text-sm shadow-xl shadow-rosegold/20 hover:opacity-95 transition-opacity flex items-center justify-center gap-2">
+                            <i class="fa-regular fa-calendar-check text-lg"></i>
+                            <span>Submeter Pedido de Marcação</span>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Rodapé -->
+    <footer class="bg-charcoal-950 border-t border-rosegold/10 pt-16 pb-12 px-6">
+        <div class="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-4 gap-12 mb-12">
+            <div class="space-y-4">
+                <div class="flex items-center gap-3">
+                    <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-rosegold-dark to-rosegold flex items-center justify-center shadow-lg">
+                        <i class="fa-solid fa-gem text-charcoal-950 text-lg"></i>
+                    </div>
+                    <span class="font-serif text-2xl font-bold tracking-widest text-gradient">ELEVA</span>
+                </div>
+                <p class="text-xs text-rosegold-champagne/70 leading-relaxed">
+                    Studio de nail design de luxo liderado por Taliane na Parede, Cascais. Especialidade em manicure russa, estruturas e alta arte em unhas.
+                </p>
+                <div class="flex items-center gap-3 pt-2">
+                    <a href="https://instagram.com" target="_blank" class="w-10 h-10 rounded-full glass-card border border-rosegold/20 flex items-center justify-center text-rosegold hover:bg-rosegold hover:text-charcoal-950 transition-colors">
+                        <i class="fa-brands fa-instagram"></i>
+                    </a>
+                    <a href="https://wa.me/351910000000" target="_blank" class="w-10 h-10 rounded-full glass-card border border-rosegold/20 flex items-center justify-center text-rosegold hover:bg-rosegold hover:text-charcoal-950 transition-colors">
+                        <i class="fa-brands fa-whatsapp"></i>
+                    </a>
+                    <a href="https://facebook.com" target="_blank" class="w-10 h-10 rounded-full glass-card border border-rosegold/20 flex items-center justify-center text-rosegold hover:bg-rosegold hover:text-charcoal-950 transition-colors">
+                        <i class="fa-brands fa-facebook-f"></i>
+                    </a>
+                </div>
+            </div>
+
+            <div>
+                <h4 class="font-serif font-bold text-lg text-rosegold-champagne mb-4">Links Rápidos</h4>
+                <ul class="space-y-2.5 text-xs text-rosegold-champagne/70">
+                    <li><a href="#inicio" class="hover:text-rosegold transition-colors">Início</a></li>
+                    <li><a href="#sobre" class="hover:text-rosegold transition-colors">Sobre a Taliane</a></li>
+                    <li><a href="#servicos" class="hover:text-rosegold transition-colors">Serviços 3D</a></li>
+                    <li><a href="#galeria" class="hover:text-rosegold transition-colors">Portfólio</a></li>
+                    <li><a href="#avaliacoes" class="hover:text-rosegold transition-colors">Avaliações</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <h4 class="font-serif font-bold text-lg text-rosegold-champagne mb-4">Tratamentos</h4>
+                <ul class="space-y-2.5 text-xs text-rosegold-champagne/70">
+                    <li><a href="#servicos" class="hover:text-rosegold transition-colors">Manicure Russa</a></li>
+                    <li><a href="#servicos" class="hover:text-rosegold transition-colors">Gel Capping & Blindagem</a></li>
+                    <li><a href="#servicos" class="hover:text-rosegold transition-colors">Alongamento em Gel</a></li>
+                    <li><a href="#servicos" class="hover:text-rosegold transition-colors">Nail Art Avançada</a></li>
+                    <li><a href="#servicos" class="hover:text-rosegold transition-colors">Spa dos Pés VIP</a></li>
+                </ul>
+            </div>
+
+            <div>
+                <h4 class="font-serif font-bold text-lg text-rosegold-champagne mb-4">Newsletter VIP</h4>
+                <p class="text-xs text-rosegold-champagne/70 mb-4">Subscreva para receber dicas exclusivas e campanhas especiais.</p>
+                <form onsubmit="handleNewsletter(event)" class="space-y-3">
+                    <input type="email" required placeholder="O seu melhor e-mail" class="w-full px-4 py-3 rounded-xl bg-charcoal-900 border border-rosegold/20 text-xs text-rosegold-champagne focus:outline-none focus:border-rosegold">
+                    <button type="submit" class="w-full py-2.5 rounded-xl bg-rosegold text-charcoal-950 font-bold text-xs uppercase tracking-wider hover:opacity-90 transition-opacity">
+                        Subscrever
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <div class="max-w-7xl mx-auto pt-8 border-t border-rosegold/10 flex flex-col sm:flex-row items-center justify-between text-xs text-rosegold-champagne/50">
+            <p>&copy; 2026 ELEVA Nail Studio (Taliane). Todos os direitos reservados. Parede, Cascais — Portugal.</p>
+            <p class="mt-2 sm:mt-0">Design & Tecnologia 3D Imersiva</p>
+        </div>
+    </footer>
+
+    <!-- Scripts de Interatividade e Three.js -->
+    <script>
+        // Three.js Background Particle & Torus Animation
+        window.addEventListener('load', () => {
+            const canvas = document.getElementById('three-canvas');
+            if(!canvas) return;
+
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ canvas: canvas, alpha: true, antialias: true });
+            
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+
+            const geometry = new THREE.TorusKnotGeometry(10, 3, 100, 16);
+            const material = new THREE.MeshBasicMaterial({
+                color: 0xe0a96d,
+                wireframe: true,
+                transparent: true,
+                opacity: 0.12
+            });
+            const torusKnot = new THREE.Mesh(geometry, material);
+            scene.add(torusKnot);
+
+            const particlesCount = 200;
+            const posArray = new Float32Array(particlesCount * 3);
+            for(let i=0; i<particlesCount*3; i++) {
+                posArray[i] = (Math.random() - 0.5) * 60;
+            }
+            const particlesGeometry = new THREE.BufferGeometry();
+            particlesGeometry.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
+            
+            const particlesMaterial = new THREE.PointsMaterial({
+                size: 0.15,
+                color: 0xf7efe5,
+                transparent: true,
+                opacity: 0.4
+            });
+            const particlesMesh = new THREE.Points(particlesGeometry, particlesMaterial);
+            scene.add(particlesMesh);
+
+            camera.position.z = 30;
+
+            let mouseX = 0;
+            let mouseY = 0;
+            let targetX = 0;
+            let targetY = 0;
+
+            window.addEventListener('mousemove', (event) => {
+                mouseX = (event.clientX - window.innerWidth / 2) * 0.001;
+                mouseY = (event.clientY - window.innerHeight / 2) * 0.001;
+            });
+
+            const clock = new THREE.Clock();
+
+            function animate() {
+                requestAnimationFrame(animate);
+                const elapsedTime = clock.getElapsedTime();
+
+                targetX = mouseX * 2;
+                targetY = mouseY * 2;
+
+                torusKnot.rotation.y = elapsedTime * 0.15 + targetX;
+                torusKnot.rotation.x = elapsedTime * 0.1 + targetY;
+
+                particlesMesh.rotation.y = elapsedTime * 0.05;
+
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            window.addEventListener('resize', () => {
+                camera.aspect = window.innerWidth / window.innerHeight;
+                camera.updateProjectionMatrix();
+                renderer.setSize(window.innerWidth, window.innerHeight);
+            });
+        });
+
+        // Mobile Menu Toggle
+        const menuBtn = document.getElementById('menu-btn');
+        const mobileMenu = document.getElementById('mobile-menu');
+        const mobileLinks = document.querySelectorAll('.mobile-link');
+
+        menuBtn.addEventListener('click', () => {
+            mobileMenu.classList.toggle('hidden');
+        });
+
+        mobileLinks.forEach(link => {
+            link.addEventListener('click', () => {
+                mobileMenu.classList.add('hidden');
+            });
+        });
+
+        // 3D Tilt Card Effect
+        const tiltCards = document.querySelectorAll('.tilt-card');
+        tiltCards.forEach(card => {
+            card.addEventListener('mousemove', (e) => {
+                const rect = card.getBoundingClientRect();
+                const x = e.clientX - rect.left;
+                const y = e.clientY - rect.top;
+                
+                const centerX = rect.width / 2;
+                const centerY = rect.height / 2;
+                
+                const rotateX = ((y - centerY) / centerY) * -8;
+                const rotateY = ((x - centerX) / centerX) * 8;
+                
+                card.style.transform = perspective(1000px) rotateX(${rotateX}deg) rotateY(${rotateY}deg) scale3d(1.01, 1.01, 1.01);
+            });
+
+            card.addEventListener('mouseleave', () => {
+                card.style.transform = 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale3d(1, 1, 1)';
+                card.style.transition = 'transform 0.5s ease';
+            });
+
+            card.addEventListener('mouseenter', () => {
+                card.style.transition = 'none';
+            });
+        });
+
+        // Gallery Filter
+        function filterGallery(category) {
+            const items = document.querySelectorAll('.gallery-item');
+            const buttons = document.querySelectorAll('.gallery-btn');
+
+            buttons.forEach(btn => {
+                btn.classList.remove('bg-rosegold', 'text-charcoal-950');
+                btn.classList.add('glass-card', 'text-rosegold-champagne');
+            });
+
+            event.target.classList.remove('glass-card', 'text-rosegold-champagne');
+            event.target.classList.add('bg-rosegold', 'text-charcoal-950');
+
+            items.forEach(item => {
+                if(category === 'all' || item.classList.contains(category)) {
+                    item.style.display = 'block';
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        }
+
+        // Custom Toast / Modal
+        function showToast(title, message) {
+            const modal = document.getElementById('toast-modal');
+            const box = document.getElementById('toast-box');
+            document.getElementById('toast-title').innerText = title;
+            document.getElementById('toast-message').innerText = message;
+
+            modal.classList.remove('opacity-0', 'pointer-events-none');
+            box.classList.remove('scale-95');
+            box.classList.add('scale-100');
+        }
+
+        function closeToast() {
+            const modal = document.getElementById('toast-modal');
+            const box = document.getElementById('toast-box');
+            modal.classList.add('opacity-0', 'pointer-events-none');
+            box.classList.remove('scale-100');
+            box.classList.add('scale-95');
+        }
+
+        function openBookingModal(serviceName) {
+            const select = document.getElementById('service-select');
+            for(let i=0; i<select.options.length; i++) {
+                if(select.options[i].value.includes(serviceName)) {
+                    select.selectedIndex = i;
+                    break;
+                }
+            }
+            document.getElementById('age
